@@ -3,7 +3,7 @@
 # ============================================================
 
 # ── 0. Setup ----------------------------------------------------------
-# devtools::install("~/Dropbox/Research/Packages/lisanon", quiet = TRUE)
+#devtools::install("~/Dropbox/Research/Packages/lisanon", quiet = TRUE)
 
 
 # Restart session after installing, then continue from here

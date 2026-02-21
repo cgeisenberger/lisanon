@@ -101,38 +101,87 @@ def load_model(model_name="de_core_news_lg"):
 #  Dictionary-based redaction (called from R)
 # ==============================================================================
 
-_surname_set = None
+# Cache keyed by dict_path so different/extended dictionaries are not confused
+_surname_cache = {}
 
 
 def load_surname_dict(dict_path):
-    """Load and cache the surname dictionary from a plain-text file."""
-    global _surname_set
-    if _surname_set is None:
+    """Load and cache the surname dictionary from a plain-text file.
+
+    Returns a set of lowercased surnames. Results are cached per dict_path,
+    so different temp files (e.g. with custom surnames) each get their own
+    cache entry.
+    """
+    if dict_path not in _surname_cache:
         with open(dict_path, "r", encoding="utf-8") as f:
             names = [
                 line.strip() for line in f
                 if line.strip() and not line.startswith("#")
             ]
-        _surname_set = set(n.lower() for n in names)
+        _surname_cache[dict_path] = set(n.lower() for n in names)
+    return _surname_cache[dict_path]
+
+
+# Unicode word character class covering Latin + extended Latin (umlauts etc.)
+_WORD_RE = re.compile(
+    r'[A-Za-z\u00c0-\u024f\u1e00-\u1eff]+'
+    r'(?:-[A-Za-z\u00c0-\u024f\u1e00-\u1eff]+)*'  # hyphenated: Müller-Schmidt
+)
+
+# Title prefixes that should be consumed along with the surname
+_TITLE_RE = re.compile(
+    r'((?:(?:Prof\.?\s+)?Dr\.?|Prof\.?|Doz\.?|PD\.?|OA\.?|OÄ\.?|CA\.?|CÄ\.?)'
+    r'\s*)$',
+    re.IGNORECASE
+)
+
+
+def _normalise(word):
+    """Lowercase and strip a trailing genitive -s for dictionary lookup.
+
+    Handles:
+      - 'Müllers' -> 'müller'  (German genitive)
+      - 'MÜLLER'  -> 'müller'  (all-caps LIS exports)
+    """
+    w = word.lower()
+    # Strip genitive -s only when the stem (without s) is >= 3 chars
+    if w.endswith('s') and len(w) > 3:
+        return w[:-1]
+    return w
 
 
 def _dict_spans(text, dict_path, title_prefix=True):
-    """Return (start, end) char offsets of dictionary surname matches."""
-    load_surname_dict(dict_path)
+    """Return (start, end) char offsets of dictionary surname matches.
+
+    Handles:
+      - Case-insensitive matching
+      - All-caps names (MÜLLER)
+      - German genitive forms (Müllers)
+      - Hyphenated double-names (Müller-Schmidt): each part is checked
+        independently; if any part matches the whole token is redacted
+      - Optional title prefix extension (Dr., Prof., OA, etc.)
+    """
+    surname_set = load_surname_dict(dict_path)
     spans = []
-    for m in re.finditer(r'\b([A-Za-z\u00c0-\u024f\u1e00-\u1eff]+)\b', text):
-        word = m.group(1)
-        if word.lower() in _surname_set:
+
+    for m in _WORD_RE.finditer(text):
+        token = m.group(0)
+
+        # For hyphenated names check each part separately
+        parts = token.split('-')
+        matched = any(_normalise(p) in surname_set for p in parts)
+
+        if matched:
             start = m.start()
             end   = m.end()
+
             if title_prefix:
-                prefix_m = re.match(
-                    r'((?:Dr|Prof|Doz|PD|OA|OA|CA|CA)\.?\s*)$',
-                    text[:start]
-                )
+                prefix_m = _TITLE_RE.search(text[:start])
                 if prefix_m:
                     start = start - len(prefix_m.group(1))
+
             spans.append((start, end))
+
     return spans
 
 
