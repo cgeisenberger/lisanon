@@ -1,0 +1,31 @@
+Package: lisanon
+Title: Anonymization Pipeline for LIS Excel Exports
+Version: 0.1.0
+Authors@R: 
+    person("Christoph", role = c("aut", "cre"),
+           email = "your@email.com")
+Description: Pre-processing pipeline for Laboratory Information System (LIS)
+    exports before LLM-assisted annotation. Handles UUID mapping of case IDs,
+    removal of patient identifiers, merging of free-text columns, and 
+    de-identification of physician names via spaCy NER.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Imports:
+    readxl,
+    dplyr,
+    tidyr,
+    stringr,
+    uuid,
+    reticulate,
+    purrr,
+    tibble,
+    rlang,
+    janitor,
+    yaml
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3

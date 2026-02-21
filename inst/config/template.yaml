@@ -1,0 +1,43 @@
+# lisanon configuration template
+# Copy this file, rename it (e.g. mylis.yaml), fill in the values,
+# and pass the path to lis_pipeline(config = "path/to/mylis.yaml")
+#
+# All column names should match AFTER janitor::clean_names() is applied,
+# i.e. use snake_case equivalents of your LIS export headers.
+# Run read_lis("your_export.xlsx", clean_names = TRUE) and inspect
+# colnames() to determine the correct values.
+
+lis: mylis
+description: "My LIS system"
+
+# Column containing the unique case / order ID
+auftrag_prefix: auftrag
+
+# Prefixes of columns containing patient name and date of birth
+patient_prefixes:
+  - patient_vor
+  - patient_nach
+  - patient_geb
+
+# Prefix of the physician signature column
+unterschriften_prefix: unterschrift
+
+# Additional columns to drop before LLM submission
+# (operational fields, dates, sender info — anything not needed for annotation)
+drop_cols:
+  - eingangsdatum
+  - freigabedatum
+  - einsender
+
+# Structured columns to KEEP as-is (everything else is merged into 'text')
+structured_prefixes:
+  - auftrag
+  - dokument
+
+# Column prefixes checked on import to warn about unexpected exports
+expected_prefixes:
+  - auftrag
+  - patient_vor
+  - patient_nach
+  - patient_geb
+  - unterschrift

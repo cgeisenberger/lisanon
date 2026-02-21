@@ -1,0 +1,38 @@
+# lisanon configuration for CoFox LIS
+# Column names assume janitor::clean_names() has been applied (snake_case)
+
+lis: cofox
+description: "CoFox Laboratory Information System (German)"
+
+# Column containing the case ID (Auftragsnummer)
+auftrag_prefix: auftrag
+
+# Patient-identifying columns to remove
+patient_prefixes:
+  - patient_vor
+  - patient_nach
+  - patient_geb
+
+# Signature column to remove
+unterschriften_prefix: unterschrift
+
+# Additional operational columns to drop before LLM submission
+drop_cols:
+  - eingangsdatum
+  - freigabedatum
+  - freigabe_druckdatum
+  - einsender
+
+# Structured (non-free-text) columns — everything else is merged into text
+structured_prefixes:
+  - auftrag
+  - dokument
+
+# Expected column prefixes used for validation warnings on import
+expected_prefixes:
+  - auftrag
+  - eingang
+  - patient_vor
+  - patient_nach
+  - patient_geb
+  - unterschrift

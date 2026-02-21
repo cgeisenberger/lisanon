@@ -1,0 +1,13 @@
+.DS_Store
+.Rbuildignore
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.venv/
+*.venv
+*.Rproj
+r-spacy/
+__pycache__/
+/data
+*.profraw
