@@ -29,7 +29,7 @@ devtools::install("lisanon")
 
 ### 2. Set up the Python environment (one time per machine)
 
-lisanon uses spaCy and GLiNER for NER via
+lisanon uses spaCy for NER via
 [reticulate](https://rstudio.github.io/reticulate/). You need to create a
 virtual environment with the required packages before first use.
 
@@ -75,7 +75,7 @@ library(lisanon)
 
 # Once per session
 reticulate::use_virtualenv("~/.venvs/r-spacy", required = TRUE)
-setup_ner()  # loads spaCy + GLiNER; first call downloads GLiNER model
+setup_ner()  # loads spaCy; first call downloads spaCy model
 
 # Run the full pipeline using the built-in CoFox preset
 result <- lis_pipeline("export_2026-02-20.xlsx", config = "cofox")
