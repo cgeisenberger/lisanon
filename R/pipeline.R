@@ -67,6 +67,8 @@ lis_pipeline <- function(path,
                          use_dict            = FALSE,
                          dict_min_length     = 4L,
                          custom_surnames     = NULL,
+                         redact_case_ids     = TRUE,
+                         case_id_pattern     = NULL,
                          uuid_map            = NULL,
                          verbose             = TRUE) {
 
@@ -86,13 +88,13 @@ lis_pipeline <- function(path,
                              "patient_nach", "patient_geb", "unterschrift")
 
   # ── Step 1: Read ───────────────────────────────────────────────────────────
-  if (verbose) message("\n── Step 1/4: Reading export ─────────────────────────")
+  if (verbose) message("\n── Step 1/5: Reading export ─────────────────────────")
   df <- read_lis(path, sheet = sheet, skip = skip,
                  delim = delim, encoding = encoding,
                  expected_prefixes = expected_prefixes)
 
   # ── Step 2: Anonymize ──────────────────────────────────────────────────────
-  if (verbose) message("\n── Step 2/4: Anonymizing case IDs & removing PII ───")
+  if (verbose) message("\n── Step 2/5: Anonymizing case IDs & removing PII ───")
   df <- anonymize_lis(df,
                       auftrag_prefix   = auftrag_prefix,
                       patient_prefixes = patient_prefixes,
@@ -101,13 +103,13 @@ lis_pipeline <- function(path,
   .uuid_map <- get_uuid_map(df)
 
   # ── Step 3: Merge free-text columns ───────────────────────────────────────
-  if (verbose) message("\n── Step 3/4: Merging free-text columns ──────────────")
+  if (verbose) message("\n── Step 3/5: Merging free-text columns ──────────────")
   df <- merge_text_columns(df,
                            structured_prefixes = structured_prefixes,
                            text_col            = text_col)
 
   # ── Step 4: spaCy NER redaction ───────────────────────────────────────────
-  if (verbose) message("\n── Step 4/4: spaCy NER name redaction ───────────────")
+  if (verbose) message("\n── Step 4/5: spaCy NER name redaction ───────────────")
   df <- deidentify_names(df,
                          text_col    = text_col,
                          replacement = replacement,
@@ -116,9 +118,19 @@ lis_pipeline <- function(path,
 
   attr(df, "uuid_map") <- .uuid_map
 
-  # ── Step 5 (optional): Dictionary redaction ───────────────────────────────
+  # ── Step 5: Case ID redaction ─────────────────────────────────────────────
+  if (redact_case_ids) {
+    if (verbose) message("\n── Step 5/5: Case ID redaction ──────────────────────")
+    df <- deidentify_case_ids(df,
+                              text_col    = text_col,
+                              pattern     = case_id_pattern,
+                              verbose     = verbose)
+    attr(df, "uuid_map") <- .uuid_map
+  }
+
+  # ── Step 6 (optional): Dictionary redaction ───────────────────────────────
   if (use_dict) {
-    if (verbose) message("\n── Step 5/5: Dictionary name redaction ──────────────")
+    if (verbose) message("\n── Step 6/6: Dictionary name redaction ──────────────")
     df <- deidentify_names_dict(df,
                                 text_col        = text_col,
                                 replacement     = replacement,

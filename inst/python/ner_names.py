@@ -201,3 +201,36 @@ def redact_names_dict_batch(texts,
         else:
             results.append(text)
     return [None if orig is None else r for orig, r in zip(texts, results)]
+
+
+# ==============================================================================
+#  Case ID redaction (called from R)
+# ==============================================================================
+
+# Default pattern covers: AK, A, EK, E followed by / then 1-6 digits / 1-2 digits
+# Examples: AK/123456/24   A/1234/24   EK/999/1   E/12345/25
+_DEFAULT_CASE_ID_PATTERN = r'\b(?:AK|EK|A|E)/\d{1,6}/\d{1,2}\b'
+
+
+def redact_case_ids_batch(texts,
+                          replacement="[FALL-ID]",
+                          pattern=None):
+    """Redact case ID patterns across a list of strings.
+
+    Parameters
+    ----------
+    texts : list of str
+    replacement : str
+        Placeholder for redacted IDs. Defaults to '[FALL-ID]'.
+    pattern : str or None
+        Regex pattern to match case IDs. Defaults to the standard
+        AK/A/EK/E format. Pass a custom pattern to override.
+    """
+    compiled = re.compile(pattern if pattern else _DEFAULT_CASE_ID_PATTERN)
+    results = []
+    for text in texts:
+        if not isinstance(text, str) or not text.strip():
+            results.append(text)
+            continue
+        results.append(compiled.sub(replacement, text))
+    return [None if orig is None else r for orig, r in zip(texts, results)]
